@@ -1,0 +1,3 @@
+.sync/*
+!.sync/.last_modified.json
+!.sync/.gdriveignore
