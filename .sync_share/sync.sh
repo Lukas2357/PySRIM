@@ -1,18 +1,16 @@
 syncin() {
 
   pwd=$(pwd)
+  base=$(basename $1)
+  fold=$(dirname $1)
 
   read -r -p "Connect to git or GitHub? (y/n) " git
 
   if [[ $git == [yY] || $git == [yY][eE][sS] ]]; then
 
-  cd $1 || return
+    cd $base || return
 
-  if [ ! -f ".gitignore" ]; then
-    cp ~/.bash_backup/.gitignore .gitignore
-  fi
-
-    if [ -d $1 ]; then
+    if [ -d $fold ]; then
       if [ -d ".git" ]; then
           echo -e "Setting Lukas2357/$1 as remote on branch main and pull content."
       else
@@ -27,33 +25,36 @@ syncin() {
       git pull origin main --allow-unrelated-histories
 
     else
-      cd .. || return
-
       git clone https://github.com/Lukas2357/"$1".git &> /dev/null
-      if [ -d $1 ]; then
+      if [ -d $fold ]; then
           echo -e "Success!"
       else
         git clone https://"$user"@github.com/Lukas2357/"$1" &> /dev/null
-        if [ -d "$1" ]; then
+        if [ -d $fold ]; then
             echo -e "Success!"
         else
             echo -e "-> Could not clone, are you sure you gave the correct user and have access to the repo?\n"
             echo "-> Continue without cloning in 10 sec, abort manually if you like to retry."
             sleep 10
-            if [ ! -d $1 ]; then
-                mkdir $1
+            if [ ! -d $fold ]; then
+                mkdir $fold
             fi
           fi
         fi
       fi
   else
-      if [ ! -d $1 ]; then
-          mkdir $1
-      fi
+    if [ ! -d $fold ]; then
+      mkdir $fold
+    fi
   fi
 
-  cd $pwd || return
-  cd $1 || return
+  cd $fold || return
+
+  if [ ! -f ".gitignore" ]; then
+    if [ -f ~/Projects/UbuntuConfigBackup/.gitignore ]; then
+      cp ~/Projects/UbuntuConfigBackup/.gitignore .gitignore
+    fi
+  fi
 
   if [ -d ".sync" ]; then
       mv .sync/.last_modified.json .last_modified.json
@@ -125,10 +126,11 @@ syncin() {
 
 }
 
-
 syncinit() {
 
   pwd=$(pwd)
+  base=$(basename $1)
+  fold=$(dirname $1)
 
   echo -e "\n### Combining GitHub and GDrive sync ###\n\n-> Let's get started...\n"
   echo -e "-> We first try to clone or connect a repo from GitHub"
@@ -137,63 +139,69 @@ syncinit() {
 
   if [[ $git == [yY] || $git == [yY][eE][sS] ]]; then
 
-      read -p "-> Please give us the username of that repo: " user
+    read -p "-> Please give us the username of that repo: " user
 
-      if [ -d $1 ]; then
+    cd $base || return
 
-          cd $1 || return
+    if [ -d $fold ]; then
 
-          if [ -d ".git" ]; then
-              echo -e "\n-> Local folder $1 is a git repo."
-              echo -e "\n-> Setting $user/$1 as remote on branch main and pull content..."
-              git checkout -b main
-              git remote add origin git@github.com:"$user"/"$1".git
-              git pull origin main --allow-unrelated-histories
-              echo -e "\n-> If it failed, you might abort and retry or add manually. We continue in any case..."
-          else
-              echo -e "\n-> Local folder $1 is not a git repo. Setting it up with $user/$1"
-              git init
-              git checkout -b main
-              git remote add origin git@github.com:"$user"/"$1".git
-              git pull origin main --allow-unrelated-histories
-              echo -e "\n-> If it failed, you might abort and retry or add manually. We continue in any case..."
-          fi
+        cd $fold || return
 
-          cd $pwd || return
+        if [ -d ".git" ]; then
+            echo -e "\n-> Local folder $1 is a git repo."
+            echo -e "\n-> Setting $user/$1 as remote on branch main and pull content..."
+            git checkout -b main
+            git remote add origin git@github.com:"$user"/"$1".git
+            git pull origin main --allow-unrelated-histories
+            echo -e "\n-> If it failed, you might abort and retry or add manually. We continue in any case..."
+        else
+            echo -e "\n-> Local folder $1 is not a git repo. Setting it up with $user/$1"
+            git init
+            git checkout -b main
+            git remote add origin git@github.com:"$user"/"$1".git
+            git pull origin main --allow-unrelated-histories
+            echo -e "\n-> If it failed, you might abort and retry or add manually. We continue in any case..."
+        fi
 
+        cd $pwd || return
+
+    else
+
+      echo -e "\n-> Trying to clone public repo...\n"
+      git clone https://github.com/"$user"/"$1".git &> /dev/null
+
+      if [ -d $fold ]; then
+          echo -e "-> Success!\n"
       else
+        echo -e "\n-> Trying to clone private repo...\n"
+        git clone https://"$user"@github.com/"$user"/"$1" &> /dev/null
 
-          cd $1 || return
-          cd .. || return
-
-          echo -e "\n-> Trying to clone public repo...\n"
-          git clone https://github.com/"$user"/"$1".git &> /dev/null
-
-          if [ -d $1 ]; then
-              echo -e "-> Success!\n"
-          else
-              echo -e "\n-> Trying to clone private repo...\n"
-              git clone https://"$user"@github.com/"$user"/"$1" &> /dev/null
-
-              if [ -d $1 ]; then
-                  echo -e "-> Success!\n"
-              else
-                  echo -e "-> Could not clone, are you sure you gave the correct user and have access to the repo?\n"
-                  echo "-> Continue without cloning in 10 sec, abort manually if you like to retry."
-                  sleep 10
-                  if [ ! -d $1 ]; then
-                      mkdir $1
-                  fi
-              fi
+        if [ -d $fold ]; then
+            echo -e "-> Success!\n"
+        else
+          echo -e "-> Could not clone, are you sure you gave the correct user and have access to the repo?\n"
+          echo "-> Continue without cloning in 10 sec, abort manually if you like to retry."
+          sleep 10
+          if [ ! -d $fold ]; then
+              mkdir $fold
           fi
+        fi
+
       fi
+    fi
   else
-      if [ ! -d $1 ]; then
-          mkdir $1
+      if [ ! -d $fold ]; then
+          mkdir $fold
       fi
   fi
 
-  cd $1 || return
+  cd $fold || return
+
+  if [ ! -f ".gitignore" ]; then
+    if [ -f ~/Projects/UbuntuConfigBackup/.gitignore ]; then
+      cp ~/Projects/UbuntuConfigBackup/.gitignore .gitignore
+    fi
+  fi
 
   if [ -d ".sync" ]; then
       echo -e "-> Found .sync folder in $1, getting .last_modified.json and .gdriveignore...\n"
