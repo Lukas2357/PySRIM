@@ -4,6 +4,7 @@ import shutil
 import time
 import multiprocessing
 
+
 Root_Folder = os.path.join('//media', 'sf_D_DRIVE')
 Ion_Number = 10000
 min_Energy = 400000
